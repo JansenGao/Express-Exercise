@@ -2,11 +2,62 @@
 
 var app = express();
 
-var handlebars = require('express3-handlebars').create({defaultLayout: 'main'});
+var handlebars = require('express3-handlebars').create({
+        defaultLayout: 'main',
+        helpers:{
+            section: function(name, options){
+                if(!this._section) this._section = {};
+                this._section[name] = options.fn(this);
+                return null;
+            }
+        }
+    });
 
 app.engine('handlebars', handlebars.engine);
 
 app.set('view engine', 'handlebars');
+
+//Added on chapter 8.1 begin
+app.use(require('body-parser')());
+
+app.get('/newsletter', function(req, res){
+    res.render('newsletter', {csrf: 'CSRF token goes here'});
+});
+
+// This is the redirect way. Added in chapter 8.1
+// app.post('/process', function(req, res){
+//     console.log('Form(from queryString): ' + req.query.form);
+//     console.log('CSRF token(from hidden form field): ' + req.body._csrf);
+//     console.log('Name (from visible form field): ' + req.body.name);
+//     console.log('Email (from visible form field): ' + req.body.email);
+//     res.redirect(303, '/thank-you');
+// });
+
+app.get('/thank-you', function(req, res){
+    res.render('thankyou');
+});
+//Added on chapter 8.1 end
+
+// Added in chapter 8.2 begin
+app.get('/newsletter-ajax', function(req, res){
+    res.render('newsletter-ajax', {csrf: 'CSRF token goes here'});
+});
+
+// This is AJAX way, added in chapter 8.3
+app.post('/process', function(req, res){
+    if(req.xhr || req.accepts('json,html') === 'json'){
+        //如果错误发生， 应该发送{error: 'error description'}
+        console.log('AJAX')
+        res.send({success: true});
+    }else{
+        //如果发生错误，应该重定向到错误页面
+        console.log(req.xhr);
+        console.log(req.accepts('json,html'));
+        console.log('redirect');
+        res.redirect(303, '/thank-you');
+    }
+});
+// Added in chapter 8.2 end
 
 var fortune = require('./lib/fortune.js');
 
@@ -60,6 +111,10 @@ app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(req, res){
         res.render('home');
+});
+
+app.get('/jquery-test', function(req, res){
+    res.render('jquerytest');
 });
     
 app.get('/about', function(req, res){

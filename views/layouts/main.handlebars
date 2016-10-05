@@ -1,15 +1,25 @@
-<!DCOTYPE HTML>
+<!DOCTYPE HTML>
 <html>
 <head>
     <title>Meadowlark Travel</title>
+    {{{_section.head}}}
     {{#if showTests}}
     	<link rel="stylesheet" href="/vendor/mocha.css">
+    {{/if}}
+
+    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+        <style>
+            body {
+                padding-top: 50px;
+                padding-bottom: 20px;
+            }
+        </style>
+    <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap-theme.min.css">
 </head>
 <body>
     <header>
-    <img src="/img/logo.jpg" alt="Meadowlark Travel Logo"/>
+    <img src="/img/logo.png" alt="Meadowlark Travel Logo"/>
     </header>
-    {{/if}}
     {{#if flash}}
         <div class="alert alert-dismissible alert-{{flash.type}}">
             <button type="button" class="close"
@@ -17,6 +27,8 @@
         </div>
     {{/if}}
     {{{body}}}
+    <script src="http://code.jquery.com/jquery-2.0.2.min.js"></script>
+    {{{_section.jquery}}}
     {{#if showTests}}
     	<div id="mocha"></div>
     	<script src="/vendor/mocha.js"></script>
