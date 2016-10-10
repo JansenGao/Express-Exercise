@@ -20,6 +20,27 @@ app.set('view engine', 'handlebars');
 //Added on chapter 8.1 begin
 app.use(require('body-parser')());
 
+// Added in chapter 9.2 - Cookie, begin
+var credentials = require('./credentials.js');
+app.use(require('cookie-parser')(credentials.cookieSecret));
+// Added in chapter 9.2 - Cookie, end
+// Added in chapter 9.4 - Session, begin
+app.use(require('express-session')({
+                                        resave: false,
+                                        saveUninitialized: false,
+                                        secret: credentials.sessionKey,
+                                    }));
+// Added in chapter 9.4 - Session, end
+
+//Begin route
+/// Added in chapter 9.5, begin
+app.use(function(req, res, next){
+    res.locals.flash = req.session.flash;
+    delete req.session.flash;
+    next();
+});
+/// Added in chapter 9.5, end
+
 app.get('/newsletter', function(req, res){
     res.render('newsletter', {csrf: 'CSRF token goes here'});
 });
@@ -109,7 +130,12 @@ app.use(function(req,res,next){
 
 app.use(express.static(__dirname + '/public'));
 
+
 app.get('/', function(req, res){
+        // Added in chapter 9.2 - Cookie, begin
+        res.cookie('monster', 'nom nom');
+        res.cookie('signed_monster', 'nom nom', {signed: true});
+        // Added in chapter 9.2 - Cookie, end
         res.render('home');
 });
 
@@ -121,6 +147,54 @@ app.get('/about', function(req, res){
         //var randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
         res.render('about', {fortune: fortune.getFortune()});
 });
+
+/// Added in chapter 9.5, begin
+var VALID_EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
+// for now, we're mocking NewsletterSignup:
+function NewsletterSignup(){
+}
+NewsletterSignup.prototype.save = function(cb){
+    cb();
+};
+
+app.post('/newsletter', function(req, res){
+    var name = req.body.name || '', email = req.body.email || '';
+    if(! email.match(VALID_EMAIL_REGEX)){
+        if(req.xhr) return res.json({error: 'Invalid name email address.'});
+        req.session.flash = {
+                            type: 'danger',
+                            intro: 'Validation error!',
+                            message: 'The email address you entered was not valid.',
+                            };
+        return res.redirect(303, '/newsletter/archive');
+    };
+
+    new NewsletterSignup({name: name, email: email}).save(function(err){
+        if(err){
+            if(req.xhr) return res.json({error: 'Database error.'});
+            req.session.flash = {
+                                type: 'danger',
+                                intro: 'Database error!',
+                                message: 'There was a database error; please try again later.',
+                                };
+            return res.redirect(303, '/newsletter/archive');
+        }
+        if(req.xhr) return res.json({success: true});
+        req.session.flash = {
+                                type: 'success',
+                                intro: 'Thank you',
+                                message: 'You have now been signed up for the newsletter.',
+                            };
+        return res.redirect(303, 'newsletter/archive');
+    });
+});
+
+app.get('/newsletter/archive', function(req, res){
+    res.render('newsletter/archive');
+});
+/// Added in chapter 9.5, end
+
 
 app.use(function(req, res, next){
         res.status(404);
